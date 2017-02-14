@@ -1,24 +1,13 @@
-FROM ruby:latest
+FROM java:openjdk-8-alpine
 
-RUN apt-get update && apt-get -y install curl
+ARG BUILDR_VERSION=1.5.0
 
-# configure java runtime
-ENV JAVA_HOME=/opt/jdk-9 \
-    JAVA_VERSION_MAJOR=9 \
-    JAVA_VERSION_MINOR=ea+143
-
-RUN mkdir -p /opt \
-  && curl --fail --silent --location --retry 3 \
-  http://www.java.net/download/java/jdk9/archive/143/binaries/jdk-${JAVA_VERSION_MAJOR}-${JAVA_VERSION_MINOR}_linux-x64_bin.tar.gz \
-  | gunzip \
-  | tar -x -C /opt
-
-RUN ${JAVA_HOME}/bin/jlink --module-path /opt/jdk-9/jmods/ --add-modules java.logging,java.compiler --output /opt/java && \
-  rm -Rf ${JAVA_HOME}
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+  apk update && \
+  apk add jruby jruby-irb jruby-minitest jruby-rdoc jruby-rake jruby-testunit
   
-RUN apt-get purge --auto-remove -y curl
+ENV PATH $PATH:/usr/share/jruby/bin
 
-ENV JAVA_HOME=/opt/java \
-PATH=$PATH:/opt/java/bin
+RUN gem install --no-rdoc --no-ri bundler && gem install --no-rdoc --no-ri buildr -v=${BUILDR_VERSION}
 
-CMD ["java"]
+CMD ["buildr"]
